@@ -1,0 +1,27 @@
+# This file tells git which files and directories to ignore
+
+# Environment variables
+.env
+
+# Python specific files
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE/Editor files
+.vscode/
+.idea/
+
+# Backend dependencies
+backend/
+!backend/app.py
+!backend/requirements.txt
+!backend/app.yaml
+
+# Frontend dependencies
+frontend/
+!frontend/index.html
