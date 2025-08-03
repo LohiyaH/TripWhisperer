@@ -16,12 +16,8 @@ env/
 .vscode/
 .idea/
 
-# Backend dependencies
-backend/
-!backend/app.py
-!backend/requirements.txt
-!backend/app.yaml
+# Backend temporary files
+.app.py.swp
 
-# Frontend dependencies
-frontend/
-!frontend/index.html
+# Frontend specific files
+# (No specific files to ignore, but good to have the section)

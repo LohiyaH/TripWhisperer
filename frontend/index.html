@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Travel Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to right bottom, #6a82fb, #fc5c7d); /* Softer gradient background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95); /* Slightly transparent white */
+            border-radius: 2rem; /* Even more rounded */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* Stronger shadow */
+            padding: 3rem; /* More generous padding */
+            width: 100%;
+            max-width: 650px; /* Slightly wider */
+            display: flex;
+            flex-direction: column;
+            gap: 2rem; /* Increased gap */
+            backdrop-filter: blur(8px); /* Frosted glass effect */
+            -webkit-backdrop-filter: blur(8px); /* For Safari */
+        }
+        h1 {
+            font-family: 'Montserrat', sans-serif; /* Different font for heading */
+            color: #333;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+            font-weight: 800; /* Make heading even bolder */
+        }
+        .chat-box {
+            background-color: #f8fafc; /* Very light background for chat */
+            border-radius: 1.5rem; /* More rounded */
+            padding: 2rem; /* More padding */
+            min-height: 300px; /* Increased height */
+            max-height: 450px; /* Max height for scrolling */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* More gap between messages */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06); /* Inner shadow for depth */
+        }
+        .message {
+            padding: 0.85rem 1.25rem; /* Slightly more padding */
+            border-radius: 1.25rem; /* More rounded message bubbles */
+            max-width: 85%; /* Slightly wider messages */
+            word-wrap: break-word;
+            font-size: 0.95rem; /* Slightly larger font */
+            line-height: 1.5;
+        }
+        .message.user {
+            background: linear-gradient(to right, #6a82fb, #8b9efd); /* Gradient blue for user */
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.5rem; /* Softer pointed corner */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .message.agent {
+            background-color: #d1fae5; /* Light green for agent messages */
+            color: #10b981; /* Darker green text */
+            align-self: flex-start;
+            border-bottom-left-radius: 0.5rem; /* Softer pointed corner */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+            /* NEW: Allow agent messages to be HTML */
+            word-break: break-word; /* Ensure long words break */
+            overflow-wrap: break-word; /* Ensure long words wrap */
+        }
+        /* Styling for the structured plan output */
+        .message.agent .plan-output {
+            background-color: #e0ffe0; /* Slightly different background for the plan itself */
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-top: 0.5rem;
+            color: #047857;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .message.agent .plan-output h3 {
+            font-weight: 700;
+            color: #059669;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        .message.agent .plan-output h4 {
+            font-weight: 600;
+            color: #065f46;
+            margin-top: 0.75rem;
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+        }
+        .message.agent .plan-output ul {
+            list-style-type: disc;
+            margin-left: 1.25rem;
+            padding-left: 0;
+        }
+        .message.agent .plan-output ul li {
+            margin-bottom: 0.25rem;
+        }
+        .message.agent .plan-output p {
+            margin-bottom: 0.5rem;
+        }
+
+
+        .button-group {
+            display: flex;
+            gap: 1.25rem; /* More space between buttons */
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 0.85rem 2rem; /* Increased horizontal padding for more space */
+            border-radius: 1rem; /* More rounded buttons */
+            font-weight: 700; /* Bolder text */
+            cursor: pointer;
+            transition: all 0.3s ease; /* Smooth transitions for all properties */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* More prominent shadow */
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center content for better icon alignment */
+            gap: 0.75rem; /* More space for icon */
+            border: none; /* No default border */
+            text-transform: uppercase; /* Uppercase text */
+            letter-spacing: 0.05em; /* Slight letter spacing */
+            position: relative; /* For pseudo-elements or inner shadows */
+            overflow: hidden; /* For potential future effects */
+            min-width: 160px; /* Ensure a minimum width for consistency */
+        }
+        button:hover {
+            transform: translateY(-4px) scale(1.02); /* More pronounced lift and slight scale */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            filter: brightness(0.9); /* Slightly dim on click */
+        }
+        button.primary {
+            background: linear-gradient(135deg, #10b981, #059669); /* Green gradient, angled */
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2); /* Text shadow for readability */
+        }
+        button.primary:hover {
+            background: linear-gradient(135deg, #059669, #10b981); /* Darker green gradient on hover */
+        }
+        button.secondary {
+            background: linear-gradient(135deg, #ef4444, #dc2626); /* Red gradient, angled */
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2); /* Text shadow for readability */
+        }
+        button.secondary:hover {
+            background: linear-gradient(135deg, #dc2626, #ef4444); /* Darker red gradient on hover */
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+            filter: none; /* Remove brightness filter when disabled */
+        }
+        /* New styles for the integrated input area */
+        .manual-input-area {
+            display: flex;
+            gap: 0.75rem; /* Space between textarea and button */
+            align-items: flex-end; /* Align items to the bottom */
+            background-color: #f8fafc; /* Light background for the input area */
+            border-radius: 1.5rem; /* Match chat box radius */
+            padding: 1rem; /* Padding around input elements */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06); /* Corrected box-shadow */
+            border: 1px solid #e2e8f0; /* Subtle border */
+        }
+        .manual-input-area textarea,
+        .manual-input-area select,
+        .manual-input-area input[type="number"],
+        .manual-input-area input[type="text"] { /* Added input[type="text"] */
+            flex-grow: 1; /* Textarea takes up available space */
+            padding: 0.75rem; /* Slightly less padding for better fit */
+            border-radius: 0.75rem; /* Smaller border-radius for input field */
+            min-height: 48px; /* Minimum height for a single line */
+            max-height: 120px; /* Max height before scroll for typing */
+            resize: vertical; /* Allow vertical resize */
+            font-size: 0.95rem;
+            box-shadow: none; /* Remove previous shadow, use parent's */
+            border: 1px solid #cbd5e0; /* Keep a subtle border */
+            font-family: 'Inter', sans-serif; /* Ensure font consistency */
+        }
+        .manual-input-area textarea:focus,
+        .manual-input-area select:focus,
+        .manual-input-area input[type="number"]:focus,
+        .manual-input-area input[type="text"]:focus { /* Added input[type="text"] */
+            outline: none;
+            border-color: #6a82fb;
+            box-shadow: 0 0 0 2px rgba(106, 130, 251, 0.2); /* Smaller focus shadow */
+        }
+        .manual-input-area button {
+            padding: 0.75rem 1.25rem; /* Smaller padding for send button */
+            min-width: unset; /* Remove min-width constraint */
+            border-radius: 0.75rem; /* Match textarea border-radius */
+            font-size: 0.9rem; /* Smaller font for send button */
+        }
+        .status-message {
+            text-align: center;
+            font-size: 1rem; /* Slightly larger font */
+            color: #475569; /* Darker gray */
+            font-weight: 500;
+        }
+        svg {
+            width: 1.35rem; /* Slightly larger icons */
+            height: 1.35rem;
+            flex-shrink: 0; /* Prevent icon from shrinking */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-4xl font-extrabold text-center">AI Travel Agent</h1>
+
+        <div id="chat-box" class="chat-box">
+            </div>
+
+        <p id="status-message" class="status-message">Click "Start Listening" to begin.</p>
+
+        <div class="button-group">
+            <button id="start-listening-btn" class="primary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor">
+                    <path d="M192 0C139 0 96 43 96 96V256c0 53 43 96 96 96s96-43 96-96V96c0-53-43-96-96-96zM64 216c0-13.3-10.7-24-24-24s-24 10.7-24 24v40c0 89.1 66.2 162.7 152 174.4V464H120c-13.3 0-24 10.7-24 24s10.7 24 24 24h144c13.3 0 24-10.7 24-24s-10.7-24-24-24H216V430.4c85.8-11.7 152-85.3 152-174.4V216c0-13.3-10.7-24-24-24s-24 10.7-24 24v40c0 70.7-57.3 128-128 128s-128-57.3-128-128V216z"/>
+                </svg>
+                Start Listening
+            </button>
+            <button id="stop-listening-btn" class="secondary" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor">
+                    <path d="M144 0H304c26.5 0 48 21.5 48 48V464c0 26.5-21.5 48-48 48H144c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48z"/>
+                </svg>
+                Stop Listening
+            </button>
+        </div>
+
+        <div class="manual-input-area"> <textarea id="manual-input" placeholder="Or type your response here..." rows="1"></textarea>
+            <button id="send-manual-btn" class="primary">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for speech recognition and synthesis
+        let recognition;
+        let synth;
+        let utterance;
+
+        // Backend API URLs
+        const TRAVEL_PLAN_API_URL = 'http://127.0.0.1:5000/generate_plan'; // Main backend for plan generation
+        const BOOKING_API_URL = 'http://127.0.0.1:5001/book_tickets'; // Simulated booking backend
+        const FLIGHT_SEARCH_API_URL = 'http://127.0.0.1:5000/search_flights'; // Flight search endpoint
+        const SUGGEST_METHODS_API_URL = 'http://127.0.0.1:5000/suggest_travel_methods'; // Travel method suggestion endpoint
+        const GET_IATA_CODE_API_URL = 'http://127.0.0.1:5000/get_iata_code'; // IATA code lookup endpoint
+        const GET_CURRENCY_RATE_API_URL = 'http://127.0.0.1:5000/get_live_currency_rate'; // Live currency rate endpoint
+
+
+        // UI elements
+        const chatBox = document.getElementById('chat-box');
+        const startListeningBtn = document.getElementById('start-listening-btn');
+        const stopListeningBtn = document.getElementById('stop-listening-btn');
+        const manualInput = document.getElementById('manual-input');
+        const sendManualBtn = document.getElementById('send-manual-btn');
+        const statusMessage = document.getElementById('status-message');
+
+        // Dynamic Greetings
+        const greetings = [
+            "Hello there! Ready to plan your next adventure?",
+            "Hi! I'm your AI travel agent. Where are we off to today?",
+            "Greetings, traveler! Tell me about your next destination.",
+            "Welcome! Let's start planning your perfect trip.",
+            "Hey! I'm here to help you discover new places. Where are you headed?"
+        ];
+
+        // Conversation state
+        let conversationState = 'ask_origin_destination';
+        let travelDetails = {
+            travel_method: '',
+            flight_class: '',
+            cruise_details: '',
+            origin: '',
+            destination: '',
+            origin_iata: '',
+            destination_iata: '',
+            cities_to_visit: '',
+            start_date: '',
+            end_date: '',
+            budget: '',
+            num_adults: '',
+            num_children: '',
+            children_ages: '',
+            food_preference: '',
+            hotel_preference: '',
+            additional_services: [],
+            current_currency_rate: '',
+            preferred_currency: '', // Base currency for conversion (e.g., USD, INR)
+            target_currency: '', // Target currency for conversion (e.g., IDR, EUR)
+            preferred_class: '',
+            passenger_names: []
+        };
+        let suggestedTravelMethods = [];
+
+        // Initialize speech recognition and synthesis
+        function initSpeech() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                statusMessage.textContent = "Speech recognition not supported in this browser. Please use manual input.";
+                startListeningBtn.disabled = true;
+                stopListeningBtn.disabled = true;
+                return;
+            }
+
+            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                updateChat('user', transcript, 'text');
+                processUserInput(transcript);
+                stopListeningBtn.disabled = true;
+                startListeningBtn.disabled = false;
+                statusMessage.textContent = "Click 'Start Listening' to speak again.";
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                statusMessage.textContent = `Speech recognition error: ${event.error}. Please try again or use manual input.`;
+                stopListeningBtn.disabled = true;
+                startListeningBtn.disabled = false;
+            };
+
+            recognition.onend = () => {
+                if (stopListeningBtn.disabled && startListeningBtn.disabled) {
+                    startListeningBtn.disabled = false;
+                }
+            };
+
+            synth = window.speechSynthesis;
+            utterance = new SpeechSynthesisUtterance();
+            utterance.lang = 'en-US';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+
+            utterance.onend = () => {
+                if (conversationState !== 'generate_plan' && conversationState !== 'booking_in_progress' && conversationState !== 'flight_search_in_progress' && conversationState !== 'suggesting_methods' && conversationState !== 'getting_iata_codes' && conversationState !== 'getting_currency_rate') {
+                    startListeningBtn.disabled = false;
+                    statusMessage.textContent = "Ready for your response. Click 'Start Listening' or type.";
+                } else if (conversationState === 'booking_in_progress') {
+                    statusMessage.textContent = "Simulating booking...";
+                } else if (conversationState === 'flight_search_in_progress') {
+                    statusMessage.textContent = "Searching for flights...";
+                } else if (conversationState === 'suggesting_methods') {
+                    statusMessage.textContent = "Determining travel methods...";
+                } else if (conversationState === 'getting_iata_codes') {
+                    statusMessage.textContent = "Getting airport codes...";
+                } else if (conversationState === 'getting_currency_rate') {
+                    statusMessage.textContent = "Fetching live currency rate...";
+                }
+                else {
+                    statusMessage.textContent = "Travel plan generated!";
+                }
+            };
+        }
+
+        function startListening() {
+            if (recognition) {
+                try {
+                    recognition.start();
+                    statusMessage.textContent = "Listening...";
+                    startListeningBtn.disabled = true;
+                    stopListeningBtn.disabled = false;
+                } catch (e) {
+                    console.error("Error starting recognition:", e);
+                    statusMessage.textContent = "Error starting listening. Please try again.";
+                    startListeningBtn.disabled = false;
+                    stopListeningBtn.disabled = true;
+                }
+            } else {
+                statusMessage.textContent = "Speech recognition not initialized. Please check browser compatibility.";
+            }
+        }
+
+        function stopListening() {
+            if (recognition) {
+                recognition.stop();
+                statusMessage.textContent = "Listening stopped.";
+                startListeningBtn.disabled = false;
+                stopListeningBtn.disabled = true;
+            }
+        }
+
+        function speak(text) {
+            utterance.text = text;
+            synth.speak(utterance);
+            statusMessage.textContent = "Agent speaking...";
+        }
+
+        function updateChat(role, content, type = 'text') {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', role);
+            if (type === 'text') {
+                messageDiv.textContent = content;
+            } else if (type === 'html') {
+                messageDiv.innerHTML = content;
+            }
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function updateInputPlaceholder(text) {
+            manualInput.placeholder = text;
+            manualInput.value = '';
+        }
+
+        // Helper to parse and format date to YYYY-MM-DD
+        function formatDateToYYYYMMDD(dateString) {
+            try {
+                // Try parsing common formats like "August 30th", "30th August 2025", "30 Aug 2025"
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) {
+                    // Fallback for more robust parsing if Date() fails
+                    const monthNames = ["january", "february", "march", "april", "may", "june",
+                                        "july", "august", "september", "october", "november", "december"];
+                    const monthShortNames = ["jan", "feb", "mar", "apr", "may", "jun",
+                                             "jul", "aug", "sep", "oct", "nov", "dec"];
+
+                    let dayMatch = dateString.match(/(\d{1,2})(?:st|nd|rd|th)?/i);
+                    let monthMatch = dateString.match(/(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)/i);
+                    let yearMatch = dateString.match(/(\d{4})/);
+
+                    if (dayMatch && monthMatch) {
+                        let day = parseInt(dayMatch[1]);
+                        let monthIndex = monthNames.indexOf(monthMatch[1].toLowerCase());
+                        if (monthIndex === -1) {
+                            monthIndex = monthShortNames.indexOf(monthMatch[1].toLowerCase());
+                        }
+                        let year = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear(); // Default to current year if not provided
+
+                        if (monthIndex !== -1 && day) {
+                            const parsedDate = new Date(year, monthIndex, day);
+                            if (!isNaN(parsedDate.getTime())) {
+                                return parsedDate.toISOString().split('T')[0];
+                            }
+                        }
+                    }
+                    return null; // Return null if parsing fails
+                }
+                return date.toISOString().split('T')[0];
+            } catch (e) {
+                console.error("Error formatting date:", e);
+                return null;
+            }
+        }
+
+
+        function renderTravelPlan(planData) {
+            let htmlContent = '<div class="plan-output">';
+
+            if (planData.general_info) {
+                htmlContent += '<h3>General Information</h3>';
+                htmlContent += '<p><strong>Currency Conversion:</strong> ' + planData.general_info.currency_conversion + '</p>';
+                htmlContent += '<p><strong>Travel Insurance Tips:</strong> ' + planData.general_info.travel_insurance_tips + '</p>';
+                htmlContent += '<p><strong>Approx. Taxi Costs:</strong> ' + planData.general_info.approx_taxi_costs + '</p>';
+                htmlContent += '<p><strong>Other Tips:</strong> ' + planData.general_info.other_tips + '</p>';
+            }
+
+            if (planData.days && planData.days.length > 0) {
+                htmlContent += '<h3>Day-wise Itinerary</h3>';
+                planData.days.forEach(day => {
+                    htmlContent += '<h4>Day ' + day.day_number + ': ' + day.title + '</h4>';
+                    htmlContent += '<p><strong>Activities:</strong></p><ul>';
+                    day.activities.forEach(activity => {
+                        htmlContent += '<li>' + activity + '</li>';
+                    });
+                    htmlContent += '</ul>';
+                    htmlContent += '<p><strong>Accommodation:</strong> ' + day.accommodation + '</p>';
+                    htmlContent += '<p><strong>Food:</strong> ' + day.food + '</p>';
+                });
+            } else {
+                htmlContent += '<p>No detailed day-wise plan available.</p>';
+            }
+
+            htmlContent += '</div>';
+
+            updateChat('agent', htmlContent, 'html');
+
+            let plainTextForSpeech = "Here is your travel plan: ";
+            if (planData.general_info) {
+                plainTextForSpeech += `General information: Currency conversion: ${planData.general_info.currency_conversion}. Travel insurance tips: ${planData.general_info.travel_insurance_tips}. Approximate taxi costs: ${planData.general_info.approx_taxi_costs}. Other tips: ${planData.general_info.other_tips}. `;
+            }
+            if (planData.days && planData.days.length > 0) {
+                plainTextForSpeech += "Here is your day-wise itinerary: ";
+                plainTextForSpeech += planData.days.map(day => `Day ${day.day_number}, ${day.title}. Activities include: ${day.activities.join(', ')}. Accommodation: ${day.accommodation}. Food: ${day.food}.`).join(' ');
+            }
+            speak(plainTextForSpeech);
+        }
+
+        async function processUserInput(input) {
+            switch (conversationState) {
+                case 'ask_origin_destination':
+                    let originParts = input.toLowerCase().split(' to ');
+                    if (originParts.length !== 2) {
+                        originParts = input.toLowerCase().split(',');
+                    }
+
+                    if (originParts.length === 2) {
+                        travelDetails.origin = originParts[0].replace('flying from ', '').trim();
+                        travelDetails.destination = originParts[1].trim();
+
+                        updateChat('agent', `Got it, from ${travelDetails.origin} to ${travelDetails.destination}. Please wait a moment while I get some essential details for your trip.`, 'text');
+                        speak(`Got it, from ${travelDetails.origin} to ${travelDetails.destination}. Please wait a moment while I get some essential details for your trip.`);
+
+                        conversationState = 'getting_iata_codes';
+                        startListeningBtn.disabled = true;
+                        manualInput.disabled = true;
+                        sendManualBtn.disabled = true;
+
+                        const originIATA = await getIataCode(travelDetails.origin);
+                        const destinationIATA = await getIataCode(travelDetails.destination);
+
+                        travelDetails.origin_iata = originIATA;
+                        travelDetails.destination_iata = destinationIATA;
+
+                        // After getting IATA codes, proceed to suggest travel methods
+                        conversationState = 'suggesting_methods';
+                        await getSuggestedTravelMethods(travelDetails.origin, travelDetails.destination);
+                        
+                        // Input will be re-enabled in getSuggestedTravelMethods's finally block
+                    } else {
+                        updateChat('agent', "Please tell me your origin and main destination, like 'New York to London'.", 'text');
+                        speak("Please tell me your origin and main destination, like 'New York to London'.");
+                        updateInputPlaceholder("E.g., Origin, Destination (e.g., New York, London)");
+                    }
+                    break;
+
+                case 'ask_travel_method_intelligent':
+                    const method = input.toLowerCase();
+                    const validMethods = suggestedTravelMethods.map(m => m.toLowerCase());
+
+                    let methodFound = false;
+                    for (const validMethod of validMethods) {
+                        if (method.includes(validMethod)) {
+                            travelDetails.travel_method = validMethod;
+                            methodFound = true;
+                            break;
+                        }
+                    }
+
+                    if (methodFound) {
+                        if (travelDetails.travel_method === 'flight') {
+                            updateChat('agent', "Okay, flight it is! What is your preferred class of travel? Economy, Premium Economy, Business, or First Class?", 'text');
+                            speak("Okay, flight it is! What is your preferred class of travel? Economy, Premium Economy, Business, or First Class?");
+                            conversationState = 'ask_flight_class';
+                            updateInputPlaceholder("E.g., Economy, Business, or First Class");
+                        } else if (travelDetails.travel_method === 'cruise') {
+                            updateChat('agent', "Wonderful! Do you have any preferred cruise lines or cabin types?", 'text');
+                            speak("Wonderful! Do you have any preferred cruise lines or cabin types?");
+                            conversationState = 'ask_cruise_details';
+                            updateInputPlaceholder("E.g., Cruise line, Cabin type (e.g., Royal Caribbean, Balcony)");
+                        } else {
+                            updateChat('agent', `Understood, traveling by ${travelDetails.travel_method}. Which specific cities or islands would you like to visit there, or would you prefer 'General exploration'?`, 'text');
+                            speak(`Understood, traveling by ${travelDetails.travel_method}. Which specific cities or islands would you like to visit there, or would you prefer 'General exploration'?`);
+                            conversationState = 'ask_cities_to_visit';
+                            updateInputPlaceholder("E.g., Specific cities/islands (e.g., Rome, Florence) OR General exploration");
+                        }
+                        manualInput.disabled = false;
+                        sendManualBtn.disabled = false;
+                    } else {
+                        updateChat('agent', `I didn't understand your travel method. Please choose from: ${suggestedTravelMethods.join(', ')}.`, 'text');
+                        speak(`I didn't understand your travel method. Please choose from: ${suggestedTravelMethods.join(', ')}.`);
+                        updateInputPlaceholder(`E.g., ${suggestedTravelMethods.length > 0 ? suggestedTravelMethods[0] + ' or Flight, Train, Car' : 'Flight, Train, Car'}`);
+                    }
+                    break;
+
+                case 'ask_flight_class':
+                    travelDetails.flight_class = input;
+                    updateChat('agent', "Excellent. Which specific cities or islands would you like to visit there, or would you prefer 'General exploration'?", 'text');
+                    speak("Excellent. Which specific cities or islands would you like to visit there, or would you prefer 'General exploration'?");
+                    conversationState = 'ask_cities_to_visit';
+                    updateInputPlaceholder("E.g., Specific cities/islands (e.g., Rome, Florence) OR General exploration");
+                    manualInput.disabled = false;
+                    sendManualBtn.disabled = false;
+                    break;
+
+                case 'ask_cruise_details':
+                    travelDetails.cruise_details = input;
+                    updateChat('agent', "Great! Which specific cities or islands would you like to visit there, or would you prefer 'General exploration'?", 'text');
+                    speak("Great! Which specific cities or islands would you like to visit there, or would you prefer 'General exploration'?");
+                    conversationState = 'ask_cities_to_visit';
+                    updateInputPlaceholder("E.g., Specific cities/islands (e.g., Rome, Florence) OR General exploration");
+                    manualInput.disabled = false;
+                    sendManualBtn.disabled = false;
+                    break;
+
+                case 'ask_cities_to_visit':
+                    travelDetails.cities_to_visit = input;
+                    updateChat('agent', "Understood. What is your desired start date for the trip?", 'text');
+                    speak("Understood. What is your desired start date for the trip?");
+                    conversationState = 'ask_start_date';
+                    updateInputPlaceholder("E.g., August 30th, 2025");
+                    manualInput.disabled = false;
+                    sendManualBtn.disabled = false;
+                    break;
+
+                case 'ask_start_date':
+                    const parsedStartDate = formatDateToYYYYMMDD(input);
+                    if (parsedStartDate) {
+                        travelDetails.start_date = parsedStartDate;
+                        updateChat('agent', "And what is your desired return date?", 'text');
+                        speak("And what is your desired return date?");
+                        conversationState = 'ask_end_date';
+                        updateInputPlaceholder("E.g., September 6th, 2025");
+                        manualInput.disabled = false;
+                        sendManualBtn.disabled = false;
+                    } else {
+                        updateChat('agent', "I couldn't understand that date format. Please try again with a clear date like 'August 30th, 2025'.", 'text');
+                        speak("I couldn't understand that date format. Please try again with a clear date like 'August 30th, 2025'.");
+                        updateInputPlaceholder("E.g., August 30th, 2025");
+                    }
+                    break;
+
+                case 'ask_end_date':
+                    const parsedEndDate = formatDateToYYYYMMDD(input);
+                    if (parsedEndDate) {
+                        travelDetails.end_date = parsedEndDate;
+                        updateChat('agent', "What's your approximate budget for this trip?", 'text');
+                        speak("What's your approximate budget for this trip?");
+                        conversationState = 'ask_budget';
+                        updateInputPlaceholder("E.g., $1000 USD or 50000 INR (approximate)");
+                        manualInput.disabled = false;
+                        sendManualBtn.disabled = false;
+                    } else {
+                        updateChat('agent', "I couldn't understand that date format. Please try again with a clear date like 'September 6th, 2025'.", 'text');
+                        speak("I couldn't understand that date format. Please try again with a clear date like 'September 6th, 2025'.");
+                        updateInputPlaceholder("E.g., September 6th, 2025");
+                    }
+                    break;
+
+                case 'ask_budget':
+                    travelDetails.budget = input;
+                    updateChat('agent', "How many adults will be traveling?", 'text');
+                    speak("How many adults will be traveling?");
+                    conversationState = 'ask_num_adults';
+                    updateInputPlaceholder("E.g., Number of adults (e.g., 2)");
+                    manualInput.disabled = false;
+                    sendManualBtn.disabled = false;
+                    break;
+
+                case 'ask_num_adults':
+                    travelDetails.num_adults = input;
+                    updateChat('agent', "How many children will be traveling, and what are their ages?", 'text');
+                    speak("How many children will be traveling, and what are their ages?");
+                    conversationState = 'ask_num_children_ages';
+                    updateInputPlaceholder("E.g., Number of children and ages (e.g., 1 child, 4 years old) OR No children");
+                    manualInput.disabled = false;
+                    sendManualBtn.disabled = false;
+                    break;
+
+                case 'ask_num_children_ages':
+                    travelDetails.children_ages = input;
+                    if (input.toLowerCase().includes('no children') || input.toLowerCase().includes('none')) {
+                        travelDetails.num_children = 0;
+                        travelDetails.has_children = false;
+                    } else {
+                        travelDetails.has_children = true;
+                        const numMatch = input.match(/\d+/);
+                        travelDetails.num_children = numMatch ? parseInt(numMatch[0]) : 1;
+                    }
+
+                    updateChat('agent', "What are your food preferences? For example, pure Indian vegetarian, vegan, or something else?", 'text');
+                    speak("What are your food preferences? For example, pure Indian vegetarian, vegan, or something else?");
+                    conversationState = 'ask_food_preference';
+                    updateInputPlaceholder("E.g., Vegetarian, Vegan, Gluten-free, etc.");
+                    manualInput.disabled = false;
+                    sendManualBtn.disabled = false;
+                    break;
+
+                case 'ask_food_preference':
+                    travelDetails.food_preference = input;
+                    updateChat('agent', "Do you have any specific hotel preferences, like hotels close to tourist places?", 'text');
+                    speak("Do you have any specific hotel preferences, like hotels close to tourist places?");
+                    conversationState = 'ask_hotel_preference';
+                    updateInputPlaceholder("E.g., Close to tourist places, budget-friendly, luxury, etc. OR No specific preference");
+                    manualInput.disabled = false;
+                    sendManualBtn.disabled = false;
+                    break;
+
+                case 'ask_hotel_preference':
+                    travelDetails.hotel_preference = input;
+                    updateChat('agent', "Are you interested in travel insurance, currency conversion, or a chauffeur-driven taxi? Please list them.", 'text');
+                    speak("Are you interested in travel insurance, currency conversion, or a chauffeur-driven taxi? Please list them.");
+                    conversationState = 'ask_additional_services';
+                    updateInputPlaceholder("E.g., Travel insurance, currency conversion, chauffeur OR All of them");
+                    manualInput.disabled = false;
+                    sendManualBtn.disabled = false;
+                    break;
+
+                case 'ask_additional_services':
+                    const servicesInput = input.toLowerCase();
+                    travelDetails.additional_services = [];
+                    if (servicesInput.includes('all') || servicesInput.includes('travel insurance')) {
+                        travelDetails.additional_services.push('travel insurance');
+                    }
+                    if (servicesInput.includes('all') || servicesInput.includes('currency conversion')) {
+                        travelDetails.additional_services.push('currency conversion');
+                    }
+                    if (servicesInput.includes('all') || servicesInput.includes('chauffeur') || servicesInput.includes('taxi')) {
+                        travelDetails.additional_services.push('chauffeur-driven taxi');
+                    }
+
+                    updateChat('agent', "Thank you for all the details! I'm now generating your personalized travel plan. This might take a moment.", 'text');
+                    speak("Thank you for all the details! I'm now generating your personalized travel plan. This might take a moment.");
+                    conversationState = 'generate_plan';
+                    startListeningBtn.disabled = true;
+                    manualInput.disabled = true;
+                    sendManualBtn.disabled = true;
+                    stopListeningBtn.disabled = true;
+
+
+                    await generateTravelPlan(travelDetails);
+                    break;
+
+                case 'generate_plan':
+                    const postPlanResponse = input.toLowerCase();
+                    if (postPlanResponse.includes('book') || postPlanResponse.includes('booking')) {
+                        updateChat('agent', "Great! To proceed with booking, what is your preferred class of travel, like Economy, Business, or First Class?", 'text');
+                        speak("Great! To proceed with booking, what is your preferred class of travel, like Economy, Business, or First Class?");
+                        conversationState = 'ask_preferred_class';
+                        updateInputPlaceholder("E.g., Economy, Business, or First Class");
+                        manualInput.disabled = false;
+                        sendManualBtn.disabled = false;
+                    } else if (postPlanResponse.includes('search flights') || postPlanResponse.includes('find flights')) {
+                        if (travelDetails.travel_method === 'flight') {
+                            updateChat('agent', "Certainly! Let me search for the cheapest flights for your trip.", 'text');
+                            speak("Certainly! Let me search for the cheapest flights for your trip.");
+                            conversationState = 'flight_search_in_progress';
+                            startListeningBtn.disabled = true;
+                            manualInput.disabled = true;
+                            sendManualBtn.disabled = true;
+                            stopListeningBtn.disabled = true;
+
+                            await searchFlights(travelDetails.origin_iata, travelDetails.destination_iata, travelDetails.start_date, travelDetails.end_date, travelDetails.preferred_currency);
+                        } else {
+                            updateChat('agent', "Flight search is only available for trips planned by flight. Would you like to proceed with booking tickets or something else?", 'text');
+                            speak("Flight search is only available for trips planned by flight. Would you like to proceed with booking tickets or something else?");
+                            manualInput.disabled = false;
+                            sendManualBtn.disabled = false;
+                        }
+                    } else if (postPlanResponse.includes('currency conversion') || postPlanResponse.includes('exchange rate')) {
+                        updateChat('agent', "Certainly. Which currency would you like to use as the base for conversion (e.g., USD, INR, EUR)?", 'text');
+                        speak("Certainly. Which currency would you like to use as the base for conversion?");
+                        conversationState = 'ask_preferred_currency';
+                        updateInputPlaceholder("E.g., USD, INR");
+                        manualInput.disabled = false;
+                        sendManualBtn.disabled = false;
+                    }
+                    else if (postPlanResponse.includes('no')) {
+                        updateChat('agent', "Understood. Let me know if you need anything else for your trip planning.", 'text');
+                        speak("Understood. Let me know if you need anything else for your trip planning.");
+                        resetConversation();
+                    } else {
+                        updateChat('agent', "I didn't catch that. Would you like to proceed with booking tickets, search flights, or get currency conversion? Please say 'book tickets', 'search flights', 'currency conversion' or 'no'.", 'text');
+                        speak("I didn't catch that. Would you like to proceed with booking tickets, search flights, or get currency conversion? Please say 'book tickets', 'search flights', 'currency conversion' or 'no'.");
+                        manualInput.disabled = false;
+                        sendManualBtn.disabled = false;
+                    }
+                    break;
+
+                case 'ask_preferred_class':
+                    travelDetails.preferred_class = input;
+                    updateChat('agent', "Please provide the full names of all passengers, separated by commas.", 'text');
+                    speak("Please provide the full names of all passengers, separated by commas.");
+                    conversationState = 'ask_passenger_names';
+                    updateInputPlaceholder("E.g., Full names separated by commas (e.g., John Doe, Jane Smith)");
+                    manualInput.disabled = false;
+                    sendManualBtn.disabled = false;
+                    break;
+
+                case 'ask_passenger_names':
+                    travelDetails.passenger_names = input.split(',').map(name => name.trim()).filter(name => name.length > 0);
+                    updateChat('agent', "Thank you. I am now simulating the ticket booking process for you. This will take a moment.", 'text');
+                    speak("Thank thank you. I am now simulating the ticket booking process for you. This will take a moment.");
+                    conversationState = 'booking_in_progress';
+                    startListeningBtn.disabled = true;
+                    manualInput.disabled = true;
+                    sendManualBtn.disabled = true;
+                    stopListeningBtn.disabled = true;
+
+                    await simulateBooking(travelDetails);
+                    break;
+
+                case 'booking_in_progress':
+                case 'flight_search_in_progress':
+                case 'suggesting_methods':
+                case 'getting_iata_codes':
+                case 'getting_currency_rate':
+                case 'ask_preferred_currency':
+                case 'ask_target_currency':
+                    // No user input expected here, just waiting for API calls or user input
+                    break;
+
+                default:
+                    updateChat('agent', "I'm sorry, I seem to have lost track. Let's start over. Where are you starting your trip from, and what's your main destination?", 'text');
+                    speak("I'm sorry, I seem to have lost track. Let's start over. Where are you starting your trip from, and what's your main destination?");
+                    resetConversation();
+                    break;
+            }
+        }
+
+        async function getIataCode(cityName) {
+            statusMessage.textContent = `Getting IATA code for ${cityName}...`;
+            try {
+                const response = await fetch(GET_IATA_CODE_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ city_name: cityName })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`IATA API error: ${response.status} - ${errorData.error || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+                if (result.status === "success" && result.iata_code && result.iata_code !== 'N/A') {
+                    return result.iata_code;
+                } else {
+                    console.warn(`Could not get IATA code for ${cityName}. Using full name as fallback.`);
+                    return cityName;
+                }
+            }
+            catch (error) {
+                console.error(`Error fetching IATA code for ${cityName}:`, error);
+                return cityName;
+            }
+        }
+
+        async function getLiveCurrencyRate(fromCurrency, toCurrency) {
+            statusMessage.textContent = `Fetching live ${fromCurrency} to ${toCurrency} rate...`;
+            try {
+                const response = await fetch(GET_CURRENCY_RATE_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from_currency: fromCurrency, to_currency: toCurrency })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Currency API error: ${response.status} - ${errorData.error || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+                if (result.status === "success" && result.rate_message) {
+                    // Display the currency conversion message in chat immediately
+                    updateChat('agent', result.rate_message, 'text');
+                    speak(result.rate_message); // Speak the message
+                    return result.rate_message;
+                } else {
+                    const errorMessage = result.message || "Current exchange rate unavailable.";
+                    updateChat('agent', errorMessage, 'text'); // Display error in chat
+                    speak(errorMessage); // Speak error message
+                    return errorMessage;
+                }
+            } catch (error) {
+                console.error('Error fetching currency rate:', error);
+                const errorMessage = `Current exchange rate unavailable due to an error: ${error.message}.`;
+                updateChat('agent', errorMessage, 'text'); // Display error in chat
+                speak(errorMessage); // Speak error message
+                return errorMessage;
+            } finally {
+                // Re-enable input and buttons after currency rate is fetched and displayed/spoken
+                startListeningBtn.disabled = false;
+                manualInput.disabled = false;
+                sendManualBtn.disabled = false;
+                statusMessage.textContent = "Ready for your response. Click 'Start Listening' or type.";
+            }
+        }
+
+        async function getSuggestedTravelMethods(origin, destination) {
+            statusMessage.textContent = "Determining best travel options...";
+            try {
+                const response = await fetch(SUGGEST_METHODS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ origin, destination })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Method Suggestion API error: ${response.status} - ${errorData.error || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+                if (result.status === "success" && result.suggested_methods && result.suggested_methods.length > 0) {
+                    suggestedTravelMethods = result.suggested_methods;
+                    const methodsList = suggestedTravelMethods.join(', ');
+                    updateChat('agent', `For a trip from ${origin} to ${destination}, common ways to travel include: ${methodsList}. Which method would you prefer?`, 'text');
+                    speak(`For a trip from ${origin} to ${destination}, common ways to travel include: ${methodsList}. Which method would you prefer?`);
+                    conversationState = 'ask_travel_method_intelligent';
+                    updateInputPlaceholder(`E.g., ${suggestedTravelMethods[0]} or Flight, Train, Car`);
+                } else {
+                    updateChat('agent', "I couldn't suggest specific travel methods for this trip. What is your preferred method of travel? By flight, train, or car?", 'text');
+                    speak("I couldn't suggest specific travel methods for this trip. What is your preferred method of travel? By flight, train, or car?");
+                    suggestedTravelMethods = ['flight', 'train', 'car'];
+                    conversationState = 'ask_travel_method_intelligent';
+                    updateInputPlaceholder("E.g., Flight, Train, Car");
+                }
+            } catch (error) {
+                console.error('Error suggesting travel methods:', error);
+                updateChat('agent', `I encountered an error while suggesting travel methods: ${error.message}. What is your preferred method of travel? By flight, train, or car?`, 'text');
+                speak(`I encountered an error while suggesting travel methods: ${error.message}. What is your preferred method of travel? By flight, train, or car?`);
+                suggestedTravelMethods = ['flight', 'train', 'car'];
+                conversationState = 'ask_travel_method_intelligent';
+                updateInputPlaceholder("E.g., Flight, Train, Car");
+            } finally {
+                startListeningBtn.disabled = false;
+                manualInput.disabled = false;
+                sendManualBtn.disabled = false;
+            }
+        }
+
+        async function generateTravelPlan(details) {
+            statusMessage.textContent = "Generating travel plan...";
+
+            try {
+                const response = await fetch(TRAVEL_PLAN_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(details)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} - ${errorData.error || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+                const travelPlanData = result.plan;
+
+                renderTravelPlan(travelPlanData);
+                statusMessage.textContent = "Travel plan ready!";
+                updateChat('agent', "Would you like to proceed with booking tickets or search flights for this trip?", 'text');
+                speak("Would you like to proceed with booking tickets or search flights for this trip?");
+                conversationState = 'generate_plan';
+            } catch (error) {
+                console.error('Error generating travel plan:', error);
+                updateChat('agent', "I encountered an error while generating your travel plan. Please try again later.", 'text');
+                speak("I encountered an error while generating your travel plan. Please try again later.");
+                statusMessage.textContent = `Error: ${error.message}`;
+                resetConversation();
+            } finally {
+                manualInput.disabled = false;
+                sendManualBtn.disabled = false;
+            }
+        }
+
+        async function searchFlights(originIATA, destinationIATA, start_date, end_date, currency) {
+            statusMessage.textContent = "Searching for flights...";
+            try {
+                const response = await fetch(FLIGHT_SEARCH_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ origin_iata: originIATA, destination_iata: destinationIATA, outbound_date: start_date, return_date: end_date, currency })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Flight Search API error: ${response.status} - ${errorData.error || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+
+                if (result.status === "success" && result.flight) {
+                    const flight = result.flight;
+                    const flightMessage = `Found a flight from ${flight.departure_airport} to ${flight.arrival_airport} for ${flight.price}. Total duration: ${flight.total_duration}. Airline: ${flight.airline}.`;
+                    updateChat('agent', flightMessage, 'text');
+                    speak(flightMessage);
+                    statusMessage.textContent = "Flight search complete!";
+                } else {
+                    updateChat('agent', result.message || "Could not find flight information for your request.", 'text');
+                    speak(result.message || "Could not find flight information for your request.");
+                    statusMessage.textContent = "Flight search failed.";
+                }
+            } catch (error) {
+                console.error('Error searching flights:', error);
+                updateChat('agent', `I encountered an error while searching for flights: ${error.message}.`, 'text');
+                speak(`I encountered an error while searching for flights: ${error.message}.`);
+                statusMessage.textContent = `Flight search error: ${error.message}`;
+            } finally {
+                resetConversation();
+            }
+        }
+
+        async function simulateBooking(details) {
+            statusMessage.textContent = "Simulating booking...";
+            try {
+                const response = await fetch(BOOKING_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        destination: details.destination,
+                        start_date: details.start_date,
+                        end_date: details.end_date,
+                        num_adults: details.num_adults,
+                        num_children: details.num_children,
+                        preferred_class: details.preferred_class,
+                        passenger_names: details.passenger_names
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Booking API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+                updateChat('agent', result.message, 'text');
+                speak(result.message);
+                statusMessage.textContent = `Booking ${result.status}!`;
+            } catch (error) {
+                console.error('Error simulating booking:', error);
+                updateChat('agent', `I encountered an error during booking simulation: ${error.message}. Please check the console for details.`, 'text');
+                speak(`I encountered an error during booking simulation: ${error.message}. Please check the console for details.`);
+                statusMessage.textContent = `Booking error: ${error.message}`;
+            } finally {
+                resetConversation();
+            }
+        }
+
+        function resetConversation() {
+            travelDetails = {
+                travel_method: '',
+                flight_class: '',
+                cruise_details: '',
+                origin: '',
+                destination: '',
+                origin_iata: '',
+                destination_iata: '',
+                cities_to_visit: '',
+                start_date: '',
+                end_date: '',
+                budget: '',
+                num_adults: '',
+                num_children: '',
+                children_ages: '',
+                food_preference: '',
+                hotel_preference: '',
+                additional_services: [],
+                current_currency_rate: '',
+                preferred_currency: '',
+                target_currency: '',
+                preferred_class: '',
+                passenger_names: []
+            };
+            suggestedTravelMethods = [];
+            conversationState = 'ask_origin_destination';
+            startListeningBtn.disabled = false;
+            manualInput.disabled = false;
+            sendManualBtn.disabled = false;
+            const initialGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+            const fullGreeting = initialGreeting + " Where are you starting your trip from, and what's your main destination?";
+            updateChat('agent', fullGreeting, 'text');
+            speak(fullGreeting);
+            updateInputPlaceholder("E.g., Origin, Destination (e.g., New York, London)");
+        }
+
+        // Event Listeners
+        window.onload = () => {
+            initSpeech();
+            const initialGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+            const fullGreeting = initialGreeting + " Where are you starting your trip from, and what's your main destination?";
+            updateChat('agent', fullGreeting, 'text');
+            speak(fullGreeting);
+            updateInputPlaceholder("E.g., Origin, Destination (e.g., New York, London)");
+        };
+
+        startListeningBtn.addEventListener('click', startListening);
+        stopListeningBtn.addEventListener('click', stopListening);
+        sendManualBtn.addEventListener('click', () => {
+            const text = manualInput.value.trim();
+            if (text) {
+                updateChat('user', text, 'text');
+                processUserInput(text);
+                manualInput.value = '';
+            }
+        });
+
+        manualInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendManualBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
